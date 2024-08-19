@@ -1,0 +1,18 @@
+{
+  "name": "roflanparser",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ziki",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "eslint": "^9.9.0",
+    "prettier": "^3.3.3",
+    "puppeteer": "^23.1.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
