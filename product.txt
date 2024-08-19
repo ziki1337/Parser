@@ -1,4 +1,0 @@
-price=359
-priceOld=null
-rating=null
-reviewCount=null
