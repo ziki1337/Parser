@@ -14,6 +14,10 @@ puppeteer.use(StealthPlugin());
   const [url, region] = args;
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
+  await page.setViewport({
+    width: 1920,  
+    height: 1080,  
+  });
 
   try {
     await page.goto(url, { waitUntil: 'networkidle2' });
@@ -26,15 +30,53 @@ puppeteer.use(StealthPlugin());
     fs.writeFileSync('page-debug.html', html);
     console.log('HTML content saved to page-debug.html');
 
-    // выбор региона (ПОКА ЧТО НЕ РАБОТАЕТ, ПОКА ЧТО ХЗ)
-    // await page.click('button[data-role="city-selector"]');
-    // await page.waitForSelector('input[name="select-city"]', { timeout: 30000 });
-    // await page.type('input[name="select-city"]', region);
+    //закрытие всплывающего окна
+    const modalExists = await page.$('div[class^="Modal_modal__"]') !== null;
+
+  if (modalExists) {
+    await page.click('button[class^="Content_remove__"]');
+    await page.waitForSelector('div[class^="Modal_modal__"]', { hidden: true });
+    console.log('Modal пропал, продолжаем работу.');
+  } else {
+    console.log('Modal не найден, действие не требуется.');
+  }
+
+    // выбор региона 
+  
+    const region2 = await page.evaluateHandle((region) => {
+      const xpath = `//span[contains(text(), "${region}")]`;
+      const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+      return result.singleNodeValue;
+    }, region);
+    console.log(region2);
+    if (region2 == region){
+    }
+    else {
+      await page.screenshot({ path: 'screenshotDO.jpg', fullPage: true });
+      await page.waitForSelector('div[class^="Region_region__"]', { visible: true });
+      await page.click('div[class^="Region_region__"]');
+      await page.waitForSelector('div[class^="UiRegionListBase_listWrapper__"]', { timeout: 30000 }); 
+      await page.evaluate((region) => {
+        // находим все элементы li с нужным классом
+        const items = document.querySelectorAll('li[class^="UiRegionListBase_item___"]');
+        
+        // 
+        for (let item of items) {
+          if (item.textContent.trim() === region) {
+            item.click();  
+            break;
+          }
+        }
+      }, region);
+      await page.waitForNavigation({ waitUntil: 'networkidle2' }); 
+    }
+
+    // await page.click('li[class="UiRegionListBase_item___"]', region);
+
     // await page.waitForSelector('.ui-suggest-item__link');
     // await page.click('.ui-suggest-item__link');
 
-    // ждем загрузку страницы с регионом
-    // await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    //ждем загрузку страницы с регионом
 
     // скрин
     await page.screenshot({ path: 'screenshot.jpg', fullPage: true });
@@ -50,9 +92,9 @@ puppeteer.use(StealthPlugin());
       };
 
       const priceSelector = 'div[class^="PriceInfo_root__"] > span[class^="Price_price__"]';
-      const priceOldSelector = 'span.Price_old__someSelector';
-      const ratingSelector = '.product-rating__value';
-      const reviewCountSelector = '.product-rating__count';
+      const priceOldSelector = 'div[class^="PriceInfo_oldPrice__"] > span[class^="Price_price__"]';
+      const ratingSelector = 'div[class^="ActionsRow_reviewsWrapper__"] > a[class^="ActionsRow_stars__"]';
+      const reviewCountSelector = 'div[class^="ActionsRow_reviewsWrapper__"] > a[class^="ActionsRow_reviews__"]';
 
       const price = extractPrice(priceSelector);
       const priceOld = extractPrice(priceOldSelector); 
@@ -65,7 +107,7 @@ puppeteer.use(StealthPlugin());
     // записываем информацию в файл
     const productInfo = [
       `price=${productData.price}`,
-      `priceOld=${productData.priceOld}`,
+      `priceOld=${productData.priceOld || "N/A"}`,
       `rating=${productData.rating}`,
       `reviewCount=${productData.reviewCount}`
     ].join('\n');
