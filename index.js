@@ -4,6 +4,26 @@ const fs = require('fs');
 
 puppeteer.use(StealthPlugin());
 
+//функция для скрина
+async function takeScreenshot(page) {
+  const currentDate = new Date();
+  const formattedDate = currentDate.toISOString().replace(/:/g, '-');
+  const screenshotPath = `screenshot-${formattedDate}.jpg`;
+
+  await page.screenshot({ path: screenshotPath, fullPage: true});
+  console.log(`Скриншот сохранен: ${screenshotPath}`);
+}
+
+//функция для записи файла
+function saveProductInfoToFile(productInfo) {
+  const currentDate = new Date();
+  const formattedDate = currentDate.toISOString().replace(/:/g, '-');
+  const fileName = `product-${formattedDate}.txt`;
+
+  fs.writeFileSync(fileName, productInfo);
+  console.log(`Файл с информацией о продукте сохранен: ${fileName}`);
+}
+
 (async () => {
   const args = process.argv.slice(2);
   if (args.length !== 2) {
@@ -31,55 +51,48 @@ puppeteer.use(StealthPlugin());
     console.log('HTML content saved to page-debug.html');
 
     //закрытие всплывающего окна
-    const modalExists = await page.$('div[class^="Modal_modal__"]') !== null;
+  //   const modalExists = await page.$('div[class^="Modal_modal__"]') !== null;
 
-  if (modalExists) {
-    await page.click('button[class^="Content_remove__"]');
-    await page.waitForSelector('div[class^="Modal_modal__"]', { hidden: true });
-    console.log('Modal пропал, продолжаем работу.');
-  } else {
-    console.log('Modal не найден, действие не требуется.');
-  }
+  // if (modalExists) {
+  //   await page.click('button[class^="Content_remove__"]');
+  //   await page.waitForSelector('div[class^="Modal_modal__"]', { hidden: true });
+  //   console.log('Modal пропал, продолжаем работу.');
+  // } else {
+  //   console.log('Modal не найден, действие не требуется.');
+  // }
 
-    // выбор региона 
+  //   // выбор региона 
   
-    const region2 = await page.evaluateHandle((region) => {
-      const xpath = `//span[contains(text(), "${region}")]`;
-      const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-      return result.singleNodeValue;
-    }, region);
-    console.log(region2);
-    if (region2 == region){
-    }
-    else {
-      await page.screenshot({ path: 'screenshotDO.jpg', fullPage: true });
-      await page.waitForSelector('div[class^="Region_region__"]', { visible: true });
-      await page.click('div[class^="Region_region__"]');
-      await page.waitForSelector('div[class^="UiRegionListBase_listWrapper__"]', { timeout: 30000 }); 
-      await page.evaluate((region) => {
-        // находим все элементы li с нужным классом
-        const items = document.querySelectorAll('li[class^="UiRegionListBase_item___"]');
+  //   const region2 = await page.evaluateHandle((region) => {
+  //     const xpath = `//span[contains(text(), "${region}")]`;
+  //     const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+  //     return result.singleNodeValue;
+  //   }, region);
+  //   console.log(region2);
+  //   if (region2 == region){
+  //   }
+  //   else {
+  //     await page.waitForSelector('div[class^="Region_region__"]', { visible: true });
+  //     await page.click('div[class^="Region_region__"]');
+  //     await page.waitForSelector('div[class^="UiRegionListBase_listWrapper__"]', { timeout: 30000 }); 
+  //     await page.evaluate((region) => {
+  //       // находим все элементы li с нужным классом
+  //       const items = document.querySelectorAll('li[class^="UiRegionListBase_item___"]');
         
-        // 
-        for (let item of items) {
-          if (item.textContent.trim() === region) {
-            item.click();  
-            break;
-          }
-        }
-      }, region);
-      await page.waitForNavigation({ waitUntil: 'networkidle2' }); 
-    }
+  //       // 
+  //       for (let item of items) {
+  //         if (item.textContent.trim() === region) {
+  //           item.click();  
+  //           break;
+  //         }
+  //       }
+  //     }, region);
+  //     await page.waitForNavigation({ waitUntil: 'networkidle2' }); 
+  //   }
 
-    // await page.click('li[class="UiRegionListBase_item___"]', region);
-
-    // await page.waitForSelector('.ui-suggest-item__link');
-    // await page.click('.ui-suggest-item__link');
-
-    //ждем загрузку страницы с регионом
 
     // скрин
-    await page.screenshot({ path: 'screenshot.jpg', fullPage: true });
+    await takeScreenshot(page);
 
     // получаем инфу о товаре
     const productData = await page.evaluate(() => {
@@ -112,7 +125,7 @@ puppeteer.use(StealthPlugin());
       `reviewCount=${productData.reviewCount}`
     ].join('\n');
 
-    fs.writeFileSync('product.txt', productInfo);
+    saveProductInfoToFile(productInfo);
 
     console.log('Data saved successfully!');
   } catch (error) {
